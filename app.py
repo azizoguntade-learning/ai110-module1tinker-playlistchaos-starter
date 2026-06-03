@@ -238,6 +238,10 @@ def add_song_sidebar():
     tags_text = st.sidebar.text_input("Tags (comma separated)")
 
     if st.sidebar.button("Add to playlist"):
+        if not title.strip() or not artist.strip():
+            st.sidebar.warning("Title and artist are required.")
+            return
+
         raw_tags = [t.strip() for t in tags_text.split(",")]
         tags = [t for t in raw_tags if t]
 
@@ -248,11 +252,20 @@ def add_song_sidebar():
             "energy": energy,
             "tags": tags,
         }
-        if title and artist:
-            normalized = normalize_song(song)
-            all_songs = st.session_state.songs[:]
-            all_songs.append(normalized)
-            st.session_state.songs = all_songs
+        normalized = normalize_song(song)
+        duplicate = any(
+            normalize_song(existing)["title"].lower() == normalized["title"].lower()
+            and normalize_song(existing)["artist_key"] == normalized["artist_key"]
+            for existing in st.session_state.songs
+        )
+
+        if duplicate:
+            st.sidebar.warning("That song is already in the playlist.")
+            return
+
+        all_songs = st.session_state.songs[:]
+        all_songs.append(normalized)
+        st.session_state.songs = all_songs
 
 
 def playlist_tabs(playlists):
@@ -355,7 +368,10 @@ def history_section():
         return
 
     summary = history_summary(history)
-    st.write("Recent picks by mood:", summary)
+    st.write(
+        "Recent picks by mood: "
+        f"Hype {summary['Hype']}, Chill {summary['Chill']}, Mixed {summary['Mixed']}"
+    )
 
     show_details = st.checkbox("Show full history")
     if show_details:

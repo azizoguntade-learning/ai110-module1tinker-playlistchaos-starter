@@ -41,6 +41,7 @@ def test_build_playlists_and_search():
     hype = playlists["Hype"]
     res = search_songs(hype, "alpha", field="artist")
     assert len(res) == 1
+    assert res[0]["artist"] == "Alpha"
 
 
 def test_lucky_pick_and_random_choice_none():

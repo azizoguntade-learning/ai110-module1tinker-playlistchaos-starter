@@ -34,7 +34,7 @@ def normalize_genre(genre: str) -> str:
 def normalize_song(raw: Song) -> Song:
     """Return a normalized song dict with expected keys."""
     title = normalize_title(str(raw.get("title", "")))
-    artist = normalize_artist(str(raw.get("artist", "")))
+    artist = str(raw.get("artist", "")).strip()
     genre = normalize_genre(str(raw.get("genre", "")))
     energy = raw.get("energy", 0)
 
@@ -51,6 +51,7 @@ def normalize_song(raw: Song) -> Song:
     return {
         "title": title,
         "artist": artist,
+        "artist_key": normalize_artist(artist),
         "genre": genre,
         "energy": energy,
         "tags": tags,
@@ -142,7 +143,7 @@ def most_common_artist(songs: List[Song]) -> Tuple[str, int]:
     """Return the most common artist and count."""
     counts: Dict[str, int] = {}
     for song in songs:
-        artist = str(song.get("artist", ""))
+        artist = str(song.get("artist_key") or normalize_artist(str(song.get("artist", ""))))
         if not artist:
             continue
         counts[artist] = counts.get(artist, 0) + 1
@@ -221,7 +222,19 @@ def prioritize_diverse_songs(
         and normalize_genre(str(song.get("genre", ""))) not in recent_genres
     ]
 
-    return diverse_songs or songs
+    if diverse_songs:
+        return diverse_songs
+
+    less_similar_songs = [
+        song
+        for song in songs
+        if normalize_artist(str(song.get("artist", ""))) not in recent_artists
+    ]
+
+    if less_similar_songs:
+        return less_similar_songs
+
+    return songs
 
 
 def random_choice_or_none(songs: List[Song]) -> Optional[Song]:
