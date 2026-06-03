@@ -7,6 +7,7 @@ from playlist_logic import (
     build_playlists,
     search_songs,
     lucky_pick,
+    prioritize_diverse_songs,
     compute_playlist_stats,
     random_choice_or_none,
 )
@@ -53,6 +54,10 @@ def test_lucky_pick_and_random_choice_none():
     # any should include Mixed as well
     pick = lucky_pick(playlists, mode="any")
     assert pick is None or isinstance(pick, dict)
+
+    history = [playlists["Hype"][0]]
+    candidates = prioritize_diverse_songs(playlists["Hype"] + playlists["Chill"], history)
+    assert all(song["artist"] != history[0]["artist"] for song in candidates)
 
     # empty list returns None
     assert random_choice_or_none([]) is None

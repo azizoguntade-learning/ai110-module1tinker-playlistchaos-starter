@@ -177,6 +177,7 @@ def search_songs(
 def lucky_pick(
     playlists: PlaylistMap,
     mode: str = "any",
+    history: Optional[List[Song]] = None,
 ) -> Optional[Song]:
     """Pick a song from the playlists according to mode."""
     if mode == "hype":
@@ -190,7 +191,37 @@ def lucky_pick(
             + playlists.get("Mixed", [])
         )
 
-    return random_choice_or_none(songs)
+    return random_choice_or_none(prioritize_diverse_songs(songs, history))
+
+
+def prioritize_diverse_songs(
+    songs: List[Song],
+    history: Optional[List[Song]] = None,
+) -> List[Song]:
+    """Prefer songs that are different from the most recent picks."""
+    if not songs or not history:
+        return songs
+
+    recent_history = history[-3:]
+    recent_artists = {
+        normalize_artist(str(song.get("artist", "")))
+        for song in recent_history
+        if song.get("artist")
+    }
+    recent_genres = {
+        normalize_genre(str(song.get("genre", "")))
+        for song in recent_history
+        if song.get("genre")
+    }
+
+    diverse_songs = [
+        song
+        for song in songs
+        if normalize_artist(str(song.get("artist", ""))) not in recent_artists
+        and normalize_genre(str(song.get("genre", ""))) not in recent_genres
+    ]
+
+    return diverse_songs or songs
 
 
 def random_choice_or_none(songs: List[Song]) -> Optional[Song]:
